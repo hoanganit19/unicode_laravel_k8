@@ -2,8 +2,9 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use App\Http\Requests\UserRequest;
+use App\Http\Controllers\Controller;
 
 class UserController extends Controller
 {
@@ -12,24 +13,30 @@ class UserController extends Controller
      */
     public function index()
     {
-        //
-        return '<h1>Unicode Academy</h1>';
+        $pageTitle = 'Danh sách người dùng';
+        $users = [
+
+        ];
+        return view('admin.users.lists', compact('pageTitle', 'users'));
     }
 
     /**
      * Show the form for creating a new resource.
      */
-    public function create()
+    public function create(Request $request)
     {
-        return '<h1>Unicode Academy - Create</h1>';
+        $pageTitle = 'Thêm người dùng';
+
+        return view('admin.users.add', compact('pageTitle'));
     }
 
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(UserRequest $request)
     {
-        //
+        //Thêm vào database
+        return redirect()->route('admin.users.index')->with('msg', 'Thêm user thành công');
     }
 
     /**
@@ -46,15 +53,17 @@ class UserController extends Controller
      */
     public function edit(string $id)
     {
-        return '<h1>Unicode Academy Edit : '.$id.'</h1>';
+        $pageTitle = 'Sửa người dùng';
+        return view('admin.users.edit', compact('pageTitle', 'id'));
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(UserRequest $request, string $id)
     {
-        //
+        //Sửa trong Database
+        return 'update';
     }
 
     /**
