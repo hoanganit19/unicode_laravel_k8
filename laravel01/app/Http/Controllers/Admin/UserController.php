@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use Carbon\Carbon;
 use App\Models\User;
+use App\Models\Group;
 use Illuminate\Http\Request;
 use App\Http\Requests\UserRequest;
 use Illuminate\Support\Facades\DB;
@@ -14,7 +15,7 @@ class UserController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
         $pageTitle = 'Danh sách người dùng';
 
@@ -55,7 +56,23 @@ class UserController extends Controller
 
         // dd($users); //show data
 
-        $users = User::latest()->get();
+        $users = User::latest();
+        if ($request->status === 'active' || $request->status === 'inactive') {
+            $status = $request->status === 'active' ? 1 : 0;
+
+            $users->whereStatus($status);
+        }
+
+
+        if ($request->s) {
+            $s = $request->s;
+            $users->where(function ($query) use ($s) {
+                $query->where('name', 'like', "%$s%");
+                $query->orWhere('email', 'like', "%$s%");
+            });
+        }
+
+        $users = $users->paginate(2)->withQueryString();
 
         return view('admin.users.lists', compact('pageTitle', 'users'));
     }
@@ -67,7 +84,8 @@ class UserController extends Controller
     {
         $pageTitle = 'Thêm người dùng';
 
-        $groups = DB::table('groups')->orderBy('name', 'asc')->get();
+        //$groups = DB::table('groups')->orderBy('name', 'asc')->get();
+        $groups = Group::orderBy('name', 'asc')->get();
 
         return view('admin.users.add', compact('pageTitle', 'groups'));
     }
@@ -87,13 +105,39 @@ class UserController extends Controller
 
         //User::create($request->all());
 
+        // User::create([
+        //     'name' => $request->name,
+        //     'email' => $request->email,
+        //     'status' => $request->status,
+        //     'group_id' => $request->group_id
+        // ]);
+
+        // User::firstOrCreate([
+        //     'name' => $request->name,
+        // ], [
+        //         'name' => $request->name,
+        //         'email' => $request->email,
+        //         'status' => $request->status,
+        //         'group_id' => $request->group_id
+        //     ]);
+
+        //create => lấy id user vừa create => insert vào 1 table khác
+
+        $user = new User();
+        // $user->name = $request->name;
+        // $user->email = $request->email;
+        // $user->status = $request->status;
+        // $user->group_id = $request->group_id;
+        $user->fill($request->all()); //khai báo fillable
+        $user->save();
+
         return redirect()->route('admin.users.index')->with('msg', 'Thêm user thành công');
     }
 
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
+    public function show(User $user)
     {
         $pageTitle = 'Thông tin chi tiết';
         // $user = DB::table('users')
@@ -102,7 +146,7 @@ class UserController extends Controller
         // ->whereId($id) //->whereEmail($email) ~ ->where('email', '=', $email)
         // ->first();
 
-        $user = User::find($id);
+        //$user = User::find($id);
 
         return view('admin.users.show', compact('user', 'pageTitle'));
     }
@@ -110,32 +154,38 @@ class UserController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(string $id)
+    //dependency injection
+    public function edit(User $user)
     {
         $pageTitle = 'Sửa người dùng';
 
         //$groups = DB::table('groups')->orderBy('name', 'asc')->get();
-        $groups = User::orderBy('name', 'asc')->get();
+        $groups = Group::orderBy('name', 'asc')->get();
 
         // $user = DB::table('users')
         // ->whereId($id)
         // ->first();
-        $user = User::find($id);
+        // $user = User::find($id);
 
-        return view('admin.users.edit', compact('pageTitle', 'id', 'groups', 'user'));
+        return view('admin.users.edit', compact('pageTitle', 'groups', 'user'));
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(UserRequest $request, string $id)
+    public function update(UserRequest $request, User $user)
     {
         //Sửa trong Database
-        $attributes = $request->except('_token', '_method');
+        // $attributes = $request->except('_token', '_method');
 
-        $attributes['updated_at'] = Carbon::now();
+        // $attributes['updated_at'] = Carbon::now();
 
-        DB::table('users')->whereId($id)->update($attributes);
+        // DB::table('users')->whereId($id)->update($attributes);
+
+        // $user = User::find($id);
+        // $user->fill($request->all());
+        // $user->save();
+        $user->update($request->all());
 
         return back()->with('msg', 'Update user thành công');
     }
@@ -145,8 +195,31 @@ class UserController extends Controller
      */
     public function destroy(string $id)
     {
-        DB::table('users')->whereId($id)->delete();
+        // DB::table('users')->whereId($id)->delete();
+
+        User::destroy($id);
 
         return redirect()->route('admin.users.index')->with('msg', 'Xóa user thành công');
+    }
+
+    public function getTrashed()
+    {
+        $users = User::onlyTrashed()->orderBy('deleted_at', 'desc')->paginate(2);
+        $pageTitle = 'Thùng rác';
+        return view('admin.users.trash', compact('pageTitle', 'users'));
+    }
+
+    public function restoreTrashed($id)
+    {
+        $user = User::withTrashed()->find($id);
+        $user->restore();
+        return redirect()->route('admin.users.index')->with('msg', 'Khôi phục user thành công');
+    }
+
+    public function deleteTrashed($id)
+    {
+        $user = User::withTrashed()->find($id);
+        $user->forceDelete();
+        return redirect()->route('admin.users.trashed')->with('msg', 'Xóa vĩnh viễn thành công');
     }
 }

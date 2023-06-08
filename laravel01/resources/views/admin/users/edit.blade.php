@@ -4,7 +4,7 @@
         {{ session('msg') }}
     @endif
     <h1>{{ $pageTitle }}</h1>
-    <form action="{{ route('admin.users.update', $id) }}" method="post">
+    <form action="{{ route('admin.users.update', $user->id) }}" method="post">
         @include('admin.users.form')
         @csrf
         @method('PUT')

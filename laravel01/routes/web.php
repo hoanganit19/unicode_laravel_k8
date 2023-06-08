@@ -79,5 +79,14 @@ Route::get('/show', function () {
 });
 
 Route::prefix('/admin')->name('admin.')->group(function () {
+
+    Route::prefix('users')->name('users.')->group(function () {
+        Route::get('/trashed', [UserController::class, 'getTrashed'])->name('trashed');
+
+        Route::get('/trashed-restore/{id}', [UserController::class, 'restoreTrashed'])->name('trashed.restore');
+
+        Route::get('/delete-trashed/{id}', [UserController::class, 'deleteTrashed'])->name('trashed.delete');
+    });
+
     Route::resource('users', UserController::class);
 });
