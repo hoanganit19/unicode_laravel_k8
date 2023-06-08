@@ -23,13 +23,18 @@ class UserRequest extends FormRequest
     {
         $id = $this->route()->user;
 
+        $emailRule  = 'required|email|unique:users,email';
+        if ($id) {
+            $emailRule.=','.$id;
+        }
+
         return [
             'name' => ['required', 'min:6', function ($attribute, $value, $fail) {
-                if ($value!=mb_strtoupper($value, 'UTF-8')) {
-                    $fail($this->attributes()[$attribute].' bắt buộc phải là chữ hoa');
-                }
+                // if ($value!=mb_strtoupper($value, 'UTF-8')) {
+                //     $fail($this->attributes()[$attribute].' bắt buộc phải là chữ hoa');
+                // }
             }],
-            'email' => 'required|email'
+            'email' => $emailRule
         ];
     }
 
@@ -38,7 +43,8 @@ class UserRequest extends FormRequest
         return [
             'required' => ':attribute bắt buộc phải nhập',
             'min' => ':attribute phải từ :min ký tự',
-            'email' => ':attribute không đúng định dạng'
+            'email' => ':attribute không đúng định dạng',
+            'unique' => ':attribute đã có người sử dụng'
         ];
     }
 
