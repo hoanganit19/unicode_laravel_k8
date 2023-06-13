@@ -1,9 +1,12 @@
 <?php
 
+use App\Models\Post;
 use App\Models\User;
 use App\Models\Group;
 use App\Models\Phone;
+use App\Models\Category;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\PostController;
 
 /*
 |--------------------------------------------------------------------------
@@ -42,3 +45,39 @@ Route::get('/users', function () {
 });
 
 //1-1, 1-n
+
+/*
+Tình huống n - n
+1 bài viết => thuộc nhiều chuyên mục
+1 chuyên mục => có nhiều bài viết
+*/
+
+Route::get('/category/{category}', function (Category $category) {
+    $posts = $category->posts()->whereStatus(0)->get(); //magic method
+
+    foreach ($posts as $post) {
+        echo $post->title.'<br/>';
+    }
+});
+
+Route::get('/post/{post}', function (Post $post) {
+    $categories = $post->categories;
+    foreach ($categories as $category) {
+        echo $category->name.' - '.$category->pivot->created_at.'<br/>';
+    }
+});
+
+Route::prefix('posts')->group(function () {
+
+    Route::get('/', [PostController::class, 'index']);
+
+    Route::get('/create', [PostController::class, 'create']);
+
+    Route::post('/create', [PostController::class, 'handleCreate']);
+
+    Route::get('/edit/{post}', [PostController::class, 'edit']);
+
+    Route::post('/edit/{post}', [PostController::class, 'handleEdit']);
+
+    Route::get('/delete/{id}', [PostController::class, 'delete']);
+});
